@@ -1,0 +1,135 @@
+// Given the basic framework, it's straightforward to extend the calculator. Add the modulus (%) operator and provisions for negative numbers.  
+
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#define MAXOP 100
+#define MAXVAL 100
+
+// Stack for operands
+double val[MAXVAL];
+int sp = 0;
+
+// Function prototypes
+int getop(char []);
+void push(double);
+double pop(void);
+void clear(void);
+
+// Main calculator loop
+int main() {
+    int type;
+    double op2;
+    char s[MAXOP];
+    
+    while ((type = getop(s)) != EOF) {
+        switch (type) {
+            case '0' ... '9': // Operand (number)
+                push(atof(s));
+                break;
+            case '+':
+                push(pop() + pop());
+                break;
+            case '*':
+                push(pop() * pop());
+                break;
+            case '-':
+                op2 = pop();
+                push(pop() - op2);
+                break;
+            case '/':
+                op2 = pop();
+                if (op2 != 0.0)
+                    push(pop() / op2);
+                else
+                    printf("error: zero divisor\n");
+                break;
+            case '%':  // Modulus operator
+                op2 = pop();
+                if (op2 != 0.0)
+                    push((int)pop() % (int)op2);  // Cast to int for modulus
+                else
+                    printf("error: zero divisor\n");
+                break;
+            case '\n':
+                printf("\t%.8g\n", pop());
+                break;
+            default:
+                printf("error: unknown command %s\n", s);
+                break;
+        }
+    }
+    
+    return 0;
+}
+
+// Pushes a value onto the stack
+void push(double f) {
+    if (sp < MAXVAL)
+        val[sp++] = f;
+    else
+        printf("error: stack full, can't push %g\n", f);
+}
+
+// Pops and returns the top value from the stack
+double pop(void) {
+    if (sp > 0)
+        return val[--sp];
+    else {
+        printf("error: stack empty\n");
+        return 0.0;
+    }
+}
+
+// Clears the stack
+void clear(void) {
+    sp = 0;
+}
+
+// Gets the next operator or operand from the input
+int getop(char s[]) {
+    int i, c;
+    
+    // Skip whitespaces
+    while ((s[0] = c = getchar()) == ' ' || c == '\t')
+        ;
+    
+    s[1] = '\0';
+    
+    // If it's a number or a negative sign, handle the number
+    if (!isdigit(c) && c != '-' && c != '.')
+        return c;  // Not a number
+    
+    i = 0;
+    
+    // Handle negative numbers (e.g., -5, -3.14)
+    if (c == '-') {
+        c = getchar();
+        if (isdigit(c)) {
+            s[++i] = '-';  // Include the negative sign
+        } else {
+            return '-';  // It is a minus operator, not a negative number
+        }
+    }
+    
+    // Read the integer part of the number
+    if (isdigit(c)) {
+        while (isdigit(s[++i] = c))
+            c = getchar();
+    }
+    
+    // Read the fractional part if any
+    if (c == '.') {
+        s[++i] = c;
+        while (isdigit(c = getchar()))
+            s[++i] = c;
+    }
+    
+    s[i] = '\0';
+    
+    if (c != EOF)
+        ungetc(c, stdin);
+    
+    return '0';  // Return '0' for a number
+}
